@@ -14,7 +14,7 @@ WHILE (@Iteration <= @EndIteration)
 		EXEC TestIntMachine @opcodeInput, @AmplifierCode, @Iteration
 	
 		INSERT INTO IntCodeInputs (AmplifierCode, Iteration, InputNumber, Input)
-		SELECT @AmplifierCode, @Iteration+1, 1, PhaseD FROM AmplifierChecks WHERE Iteration = @Iteration
+		SELECT @AmplifierCode, @Iteration+1, 1, PhaseD FROM AmplifierChecks WHERE Iteration = @Iteration+1
 
 		WHILE (SELECT FinalOutput FROM AmplifierChecks WHERE Iteration = @Iteration) IS NULL
 			BEGIN
