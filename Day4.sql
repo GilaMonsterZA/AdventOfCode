@@ -15,7 +15,7 @@ CREATE TABLE PasswordCharacters (
 
 insert into PasswordCharacters (Password)
 SELECT Number 
-FROM InterstellarTransport..Numbers
+FROM Numbers
 	where Number between 357253 and 892942;
 
 update PasswordCharacters
