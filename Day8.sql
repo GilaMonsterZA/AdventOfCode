@@ -21,17 +21,20 @@ SplitToLayersAndRows AS (
 	FROM SplitToLayers
 ),
 VisiblePixels AS (
-SELECT Number, Layer, Row, ROW_NUMBER() OVER (PARTITION BY Row ORDER BY Number) AS PositionInRow, Pixel 
+SELECT Number, Layer, Row, SplitToLayersAndRows.PositionInLayer, Pixel 
 	FROM SplitToLayersAndRows INNER JOIN (
 		SELECT MIN(Layer) AS LayerFromWhichPixelChosen, PositionInLayer
 		FROM SplitToLayersAndRows
-		WHERE Pixel > 0
+		WHERE Pixel < 2
 		GROUP BY PositionInLayer
 	) CorrectLayer ON CorrectLayer.PositionInLayer = SplitToLayersAndRows.PositionInLayer AND CorrectLayer.LayerFromWhichPixelChosen = SplitToLayersAndRows.Layer
 )
 SELECT * FROM (
-SELECT Row, PositionInRow, Pixel FROM VisiblePixels
+SELECT Row, ROW_NUMBER() OVER (Partition by Row Order by PositionInLayer) as PositionInRow, Pixel FROM VisiblePixels
 ) p
-PIVOT (MAX(Pixel) FOR PositionInRow IN ([1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25])) AS pvt
+PIVOT (MIN(Pixel) FOR PositionInRow IN ([1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25])) AS pvt
 ORDER BY pvt.Row
 
+-- Take results to Excel and apply conditional formatting to see result
+
+--JYZHF
