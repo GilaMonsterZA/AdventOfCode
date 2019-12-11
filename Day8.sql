@@ -29,4 +29,9 @@ SELECT Number, Layer, Row, ROW_NUMBER() OVER (PARTITION BY Row ORDER BY Number) 
 		GROUP BY PositionInLayer
 	) CorrectLayer ON CorrectLayer.PositionInLayer = SplitToLayersAndRows.PositionInLayer AND CorrectLayer.LayerFromWhichPixelChosen = SplitToLayersAndRows.Layer
 )
-SELECT * FROM VisiblePixels
+SELECT * FROM (
+SELECT Row, PositionInRow, Pixel FROM VisiblePixels
+) p
+PIVOT (MAX(Pixel) FOR PositionInRow IN ([1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25])) AS pvt
+ORDER BY pvt.Row
+
