@@ -15,61 +15,27 @@ DECLARE @AsteroidList VARCHAR(4000) = ''
 
 INSERT INTO AsteroidMap (AsteroidRow)
 VALUES 
-('#.#...#.#.'),
-('.###....#.'),
-('.#....#...'),
-('##.#.#.#.#'),
-('....#.#.#.'),
-('.##..###.#'),
-('..#...##..'),
-('..##....##'),
-('......#...'),
-('.####.###.');
-
-
---('.#..##.###...#######'),
---('##.############..##.'),
---('.#.######.########.#'),
---('.###.#######.####.#.'),
---('#####.##.#.##.###.##'),
---('..#####..#.#########'),
---('####################'),
---('#.####....###.#.#.##'),
---('##.#################'),
---('#####.##.###..####..'),
---('..######..##.#######'),
---('####.##.####...##..#'),
---('.#####..#.######.###'),
---('##...#.##########...'),
---('#.##########.#######'),
---('.####.#.###.###.#.##'),
---('....##.##.###..#####'),
---('.#.#.###########.###'),
---('#.#.#.#####.####.###'),
---('###.##.####.##.#..##');
-
-
---('...###.#########.####'),
---('.######.###.###.##...'),
---('####.########.#####.#'),
---('########.####.##.###.'),
---('####..#.####.#.#.##..'),
---('#.################.##'),
---('..######.##.##.#####.'),
---('#.####.#####.###.#.##'),
---('#####.#########.#####'),
---('#####.##..##..#.#####'),
---('##.######....########'),
---('.#######.#.#########.'),
---('.#.##.#.#.#.##.###.##'),
---('######...####.#.#.###'),
---('###############.#.###'),
---('#.#####.##..###.##.#.'),
---('##..##..###.#.#######'),
---('#..#..########.#.##..'),
---('#.#.######.##.##...##'),
---('.#.##.#####.#..#####.'),
---('#.#.##########..#.##.');
+('...###.#########.####'),
+('.######.###.###.##...'),
+('####.########.#####.#'),
+('########.####.##.###.'),
+('####..#.####.#.#.##..'),
+('#.################.##'),
+('..######.##.##.#####.'),
+('#.####.#####.###.#.##'),
+('#####.#########.#####'),
+('#####.##..##..#.#####'),
+('##.######....########'),
+('.#######.#.#########.'),
+('.#.##.#.#.#.##.###.##'),
+('######...####.#.#.###'),
+('###############.#.###'),
+('#.#####.##..###.##.#.'),
+('##..##..###.#.#######'),
+('#..#..########.#.##..'),
+('#.#.######.##.##...##'),
+('.#.##.#####.#..#####.'),
+('#.#.##########..#.##.');
 
 WITH AsteroidsSplit AS (
 SELECT RowNo, n.Number, SUBSTRING(AsteroidRow,n.Number,1) AS IsAsteroid
@@ -82,12 +48,6 @@ SELECT Number-1, RowNo-1
 FROM AsteroidsSplit
 WHERE IsAsteroid = '#';
 
-TRUNCATE TABLE dbo.AsteroidLocations
-
-INSERT INTO dbo.AsteroidLocations (Y,X)
-VALUES 
-(1,2), (1,6), (2,4), (4,3), (4,5);
-
 WITH Tracking AS (
 SELECT Station.AsteroidID, Station.X AS StationX, Station.Y AS StationY, Target.X AS TargetX, Target.Y AS TargetY,
 	CASE WHEN Station.Y-Target.Y = 0 THEN 9999
@@ -95,7 +55,7 @@ SELECT Station.AsteroidID, Station.X AS StationX, Station.Y AS StationY, Target.
 	END 
 	AS Angle,
 	CASE 
-		WHEN Station.X>=Target.X AND Station.Y<Target.Y
+		WHEN Station.X>=Target.X AND Station.Y<Target.Y 
 			THEN 0 
 		WHEN Station.X>=Target.X AND Station.Y>=Target.Y 
 			THEN 1
@@ -121,10 +81,13 @@ SELECT DISTINCT AsteroidID, StationX, StationY,
              StationY
 	ORDER BY COUNT(*) DESC;
 
+-- Best station is at 11, 13
 
 WITH Shooting AS (
 SELECT Station.AsteroidID, Station.X AS StationX, Station.Y AS StationY, Target.X AS TargetX, Target.Y AS TargetY,
-	CASE WHEN Station.Y-Target.Y = 0 THEN 0
+	CASE 
+		WHEN Station.Y-Target.Y = 0 AND Station.X > Target.X THEN 90
+		WHEN Station.Y-Target.Y = 0 AND Station.X < Target.X THEN -90
 		ELSE DEGREES(ATAN(1.0*(Station.X-Target.X)/(Station.Y-Target.Y))) 
 	END AS Angle,
 	CASE 
@@ -137,20 +100,33 @@ SELECT Station.AsteroidID, Station.X AS StationX, Station.Y AS StationY, Target.
 		WHEN Target.X<Station.X AND Target.Y<Station.Y 
 			THEN 270
 	END  AS Quadrant,
-	0 AS Distance
+	SQRT(POWER(Station.X-Target.X, 2) + POWER(Station.Y-Target.Y, 2)) AS Distance -- Pythag
 	FROM dbo.AsteroidLocations Station 
 		CROSS JOIN dbo.AsteroidLocations Target
 	WHERE Station.AsteroidID != Target.AsteroidID
-)
+		AND Station.X = 11 AND Station.Y = 13
+),
+Adjusted AS (
 SELECT AsteroidID,
        StationX,
        StationY,
        TargetX,
        TargetY,
-       Angle,
-       Quadrant,
-	   StationX-TargetX,
-	   StationY-TargetY
+	   Distance,
+	   Angle,
+	   Quadrant,
+	   CASE Quadrant
+		WHEN 0 THEN Angle*-1
+		WHEN 90 THEN 180-Angle
+		WHEN 180 THEN 180+(Angle*-1)
+		WHEN 270 THEN 360-Angle
+	   END AS Rotation		
 FROM Shooting
-WHERE StationX = 4 AND StationY = 2
-ORDER BY Angle, Quadrant
+)
+SELECT *, ROW_NUMBER() OVER (PARTITION BY Rotation ORDER BY Distance) AS ShootingOrder
+FROM Adjusted
+ORDER BY ShootingOrder, Rotation
+
+-- Row 200 is the answer to part 2
+
+
