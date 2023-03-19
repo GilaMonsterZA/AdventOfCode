@@ -13,10 +13,11 @@ for (i in 1:500) {
   ystart <- start[[i]][2]
   yend <- end[[i]][2]
 
-# if horizontal or vertical
+# if horizontal or vertical - part 1
   if (xstart == xend || ystart == yend) {
     Seafloor[xstart:xend,ystart:yend] <- Seafloor[xstart:xend,ystart:yend] + 1
   }
+# or not - part 2
   else {
     if ((xend > xstart && yend > ystart) || (xend < xstart && yend < ystart))
       yincrement <- 1
@@ -30,9 +31,3 @@ for (i in 1:500) {
 }
 
 print (sum(Seafloor>1)) # answer
-
-#
-# > Seafloor[565:565,190:195]
-# [1] 0 0 0 0 0 0
-#
-# Seafloor[565:565,190:195] <- Seafloor[565:565,190:195] + 1
