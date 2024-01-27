@@ -38,16 +38,37 @@ CREATE TABLE Segments (
 INSERT INTO Segments 
 	VALUES (1),(2),(3),(4),(5),(6),(7)
 GO
+
+DROP TABLE IF EXISTS Signals;
+DROP TABLE IF EXISTS SignalElements;
+GO
+
 CREATE TABLE Signals (
+ RowID int,
+ Display tinyint,
+ Signal Char(7),
+ DecodedValue tinyint
+);
+
+CREATE TABLE SignalElements (
 	RowID INT,
 	Signal TINYINT,
 	Segment CHAR(1)
 );
+GO
+
+Insert Into Signals (RowID, Display, Signal, DecodedValue)
+select RowID, CAST(REPLACE(Display,'Signal','') AS TinyINT) AS Display, Signal, CAST (NULL AS Tinyint) AS DecodedValue
+from 
+	(SELECT RowID, Signal0, Signal1, Signal2, Signal3, Signal4, Signal5, Signal6, Signal7, Signal8, Signal9 FROM Day8Import) sig 
+	UNPIVOT (Signal FOR Display IN (Signal0, Signal1, Signal2, Signal3, Signal4, Signal5, Signal6, Signal7, Signal8, Signal9)) AS u;
 
 With SplitSignals as (
 SELECT RowID, 0 as Signal, SUBSTRING(Signal0,Segments.Segment,1) as Segment 
 	FROM Day8Import CROSS APPLY Segments
 	WHERE SUBSTRING(Signal0,Segments.Segment,1) != ''
 )
+insert into SignalElements (RowID, Signal, Segment)
 Select * from SplitSignals
 order by RowID, Signal, segment
+
